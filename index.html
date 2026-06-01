@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Kamera 60FPS</title>
+
+<style>
+body{
+    margin:0;
+    background:#000;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+    font-family:Arial;
+    color:white;
+}
+
+video{
+    width:100%;
+    max-width:420px;
+    border-radius:12px;
+    border:2px solid #00ffcc;
+}
+
+button{
+    margin-top:10px;
+    padding:12px 18px;
+    border:none;
+    border-radius:10px;
+    font-weight:bold;
+    background:#00ffcc;
+}
+
+#downloadBtn{
+    display:none;
+    background:#00aaff;
+}
+
+img{
+    margin-top:10px;
+    width:100%;
+    max-width:420px;
+    border-radius:12px;
+}
+</style>
+</head>
+
+<body>
+
+<video id="video" autoplay playsinline></video>
+
+<button onclick="takePhoto()">📸 FOTO 60FPS</button>
+<button id="downloadBtn" onclick="downloadPhoto()">⬇ DOWNLOAD</button>
+
+<img id="preview">
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const preview = document.getElementById("preview");
+
+let finalImage = "";
+
+// 🎥 CAMERA 60FPS REQUEST
+navigator.mediaDevices.getUserMedia({
+    video: {
+        facingMode: "environment",
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 60, max: 60 } // REQUEST 60FPS
+    },
+    audio: false
+})
+.then(stream => {
+    video.srcObject = stream;
+})
+.catch(err => {
+    alert("Kamera error: " + err);
+});
+
+// 📸 FOTO NORMAL HD
+function takePhoto(){
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    ctx.drawImage(video,0,0,canvas.width,canvas.height);
+
+    let img = ctx.getImageData(0,0,canvas.width,canvas.height);
+    let d = img.data;
+
+    // 🔥 ringan biar lebih tajam (tidak berat)
+    for(let i=0;i<d.length;i+=4){
+        d[i]   = Math.min(255, d[i] * 1.08);
+        d[i+1] = Math.min(255, d[i+1] * 1.08);
+        d[i+2] = Math.min(255, d[i+2] * 1.08);
+    }
+
+    ctx.putImageData(img,0,0);
+
+    finalImage = canvas.toDataURL("image/jpeg", 0.95);
+
+    preview.src = finalImage;
+
+    document.getElementById("downloadBtn").style.display="block";
+}
+
+// ⬇ DOWNLOAD
+function downloadPhoto(){
+    let a=document.createElement("a");
+    a.download="foto-60fps.jpg";
+    a.href=finalImage;
+    a.click();
+}
+</script>
+
+</body>
+</html>
